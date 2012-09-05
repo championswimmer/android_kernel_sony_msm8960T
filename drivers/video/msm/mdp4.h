@@ -306,16 +306,10 @@ struct mdp4_overlay_pipe {
 	uint32 is_fg;		/* control alpha & color key */
 	uint32 srcp0_addr;	/* interleave, luma */
 	uint32 srcp0_ystride;
-	struct file *srcp0_file;
-	int put0_need;
 	uint32 srcp1_addr;	/* pseudoplanar, chroma plane */
 	uint32 srcp1_ystride;
-	struct file *srcp1_file;
-	int put1_need;
 	uint32 srcp2_addr;	/* planar color 2*/
 	uint32 srcp2_ystride;
-	struct file *srcp2_file;
-	int put2_need;
 	uint32 srcp3_addr;	/* alpha/color 3 */
 	uint32 srcp3_ystride;
 	uint32 fetch_plane;
@@ -589,7 +583,7 @@ int mdp4_overlay_unset_mixer(int mixer);
 int mdp4_overlay_play_wait(struct fb_info *info,
 	struct msmfb_overlay_data *req);
 int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req);
-int mdp4_overlay_commit(struct fb_info *info);
+int mdp4_overlay_commit(struct fb_info *info, int mixer);
 struct mdp4_overlay_pipe *mdp4_overlay_pipe_alloc(int ptype, int mixer);
 void mdp4_overlay_dma_commit(int mixer);
 void mdp4_overlay_vsync_commit(struct mdp4_overlay_pipe *pipe);
@@ -951,15 +945,9 @@ static inline void mdp4_wfd_init(int cndx)
 {
 	/* empty */
 }
-static inline int mdp4_wfd_pipe_commit(struct msm_fb_data_type *mfd,
-					int cndx, int wait)
-{
-	return 0;
-}
 #else
 void mdp4_wfd_pipe_queue(int cndx, struct mdp4_overlay_pipe *pipe);
 void mdp4_wfd_init(int cndx);
-int mdp4_wfd_pipe_commit(struct msm_fb_data_type *mfd, int cndx, int wait);
 #endif
 
 #endif /* MDP_H */

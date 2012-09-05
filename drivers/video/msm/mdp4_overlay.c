@@ -191,26 +191,6 @@ void mdp4_overlay_iommu_pipe_free(int ndx, int all)
 	if (pipe == NULL)
 		return;
 
-	if (pipe->flags & MDP_MEMORY_ID_TYPE_FB) {
-		pipe->flags &= ~MDP_MEMORY_ID_TYPE_FB;
-		if (pipe->put0_need) {
-			fput_light(pipe->srcp0_file, pipe->put0_need);
-			pipe->put0_need = 0;
-		}
-		if (pipe->put1_need) {
-			fput_light(pipe->srcp1_file, pipe->put1_need);
-			pipe->put1_need = 0;
-		}
-		if (pipe->put2_need) {
-			fput_light(pipe->srcp2_file, pipe->put2_need);
-			pipe->put2_need = 0;
-		}
-
-		pr_debug("%s: ndx=%d flags=%x put=%d\n", __func__,
-			pipe->pipe_ndx, pipe->flags, pipe->put0_need);
-		return;
-	}
-
 	mutex_lock(&iommu_mutex);
 	mixer = pipe->mixer_num;
 	iom = &pipe->iommu;
@@ -737,14 +717,8 @@ void mdp4_overlay_rgb_setup(struct mdp4_overlay_pipe *pipe)
 		op_mode &= ~(MDP4_OP_FLIP_LR + MDP4_OP_SCALEX_EN);
 		op_mode &= ~(MDP4_OP_FLIP_UD + MDP4_OP_SCALEY_EN);
 		outpdw(rgb_base + 0x0058, op_mode);/* MDP_RGB_OP_MODE */
-	} else {
-		if (pipe->op_mode & MDP4_OP_FLIP_LR && mdp_rev >= MDP_REV_42) {
-			/* Enable x-scaling bit to enable LR flip */
-			/* for MDP > 4.2 targets */
-			pipe->op_mode |= 0x01;
-		}
+	} else
 		outpdw(rgb_base + 0x0058, pipe->op_mode);/* MDP_RGB_OP_MODE */
-	}
 	outpdw(rgb_base + 0x005c, pipe->phasex_step);
 	outpdw(rgb_base + 0x0060, pipe->phasey_step);
 
@@ -2949,13 +2923,14 @@ static int get_img(struct msmfb_data *img, struct fb_info *info,
 		if (file == NULL)
 			return -EINVAL;
 
-		pipe->flags |= MDP_MEMORY_ID_TYPE_FB;
 		if (MAJOR(file->f_dentry->d_inode->i_rdev) == FB_MAJOR) {
 			fb_num = MINOR(file->f_dentry->d_inode->i_rdev);
 			if (get_fb_phys_info(start, len, fb_num,
 				DISPLAY_SUBSYSTEM_ID)) {
 				ret = -1;
 			} else {
+				pr_warn("%s: mdp4_overlay play with FB memory\n",
+							 __func__);
 				*srcp_file = file;
 				*p_need = put_needed;
 			}
@@ -3313,8 +3288,11 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 	struct mdp4_overlay_pipe *pipe;
 	ulong start, addr;
 	ulong len = 0;
+	struct file *srcp0_file = NULL;
+	struct file *srcp1_file = NULL, *srcp2_file = NULL;
 	struct ion_handle *srcp0_ihdl = NULL;
 	struct ion_handle *srcp1_ihdl = NULL, *srcp2_ihdl = NULL;
+	int ps0_need, p_need;
 	uint32_t overlay_version = 0;
 	int ret = 0;
 
@@ -3339,8 +3317,8 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 	mutex_lock(&mfd->dma->ov_mutex);
 
 	img = &req->data;
-	get_img(img, info, pipe, 0, &start, &len, &pipe->srcp0_file,
-		&pipe->put0_need, &srcp0_ihdl);
+	get_img(img, info, pipe, 0, &start, &len, &srcp0_file,
+		&ps0_need, &srcp0_ihdl);
 	if (len == 0) {
 		pr_err("%s: pmem Error\n", __func__);
 		ret = -1;
@@ -3362,9 +3340,8 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 	if (pipe->fetch_plane == OVERLAY_PLANE_PSEUDO_PLANAR) {
 		if (overlay_version > 0) {
 			img = &req->plane1_data;
-			get_img(img, info, pipe, 1, &start, &len,
-				&pipe->srcp1_file, &pipe->put1_need,
-				&srcp1_ihdl);
+			get_img(img, info, pipe, 1, &start, &len, &srcp1_file,
+				&p_need, &srcp1_ihdl);
 			if (len == 0) {
 				pr_err("%s: Error to get plane1\n", __func__);
 				ret = -EINVAL;
@@ -3395,9 +3372,8 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 	} else if (pipe->fetch_plane == OVERLAY_PLANE_PLANAR) {
 		if (overlay_version > 0) {
 			img = &req->plane1_data;
-			get_img(img, info, pipe, 1, &start, &len,
-				&pipe->srcp1_file, &pipe->put1_need,
-				&srcp1_ihdl);
+			get_img(img, info, pipe, 1, &start, &len, &srcp1_file,
+				&p_need, &srcp1_ihdl);
 			if (len == 0) {
 				pr_err("%s: Error to get plane1\n", __func__);
 				ret = -EINVAL;
@@ -3406,9 +3382,8 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 			pipe->srcp1_addr = start + img->offset;
 
 			img = &req->plane2_data;
-			get_img(img, info, pipe, 2, &start, &len,
-				&pipe->srcp2_file, &pipe->put2_need,
-				&srcp2_ihdl);
+			get_img(img, info, pipe, 2, &start, &len, &srcp2_file,
+				&p_need, &srcp2_ihdl);
 			if (len == 0) {
 				pr_err("%s: Error to get plane2\n", __func__);
 				ret = -EINVAL;
@@ -3473,15 +3448,24 @@ int mdp4_overlay_play(struct fb_info *info, struct msmfb_overlay_data *req)
 		mdp4_iommu_unmap(pipe);
 	mdp4_stat.overlay_play[pipe->mixer_num]++;
 
+#ifdef CONFIG_ANDROID_PMEM
+        if (srcp0_file)
+                put_pmem_file(srcp0_file);
+        if (srcp1_file)
+                put_pmem_file(srcp1_file);
+        if (srcp2_file)
+                put_pmem_file(srcp2_file);
+#endif
+        /* only source may use frame buffer */
+        if (img->flags & MDP_MEMORY_ID_TYPE_FB)
+                fput_light(srcp0_file, ps0_need);
 end:
 	mutex_unlock(&mfd->dma->ov_mutex);
-
 	return ret;
 }
 
-int mdp4_overlay_commit(struct fb_info *info)
+int mdp4_overlay_commit(struct fb_info *info, int mixer)
 {
-	int ret = 0;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 
 	if (mfd == NULL)
@@ -3490,37 +3474,34 @@ int mdp4_overlay_commit(struct fb_info *info)
 	if (!mfd->panel_power_on) /* suspended */
 		return -EINVAL;
 
+	if (mixer >= MDP4_MIXER_MAX)
+		return -EPERM;
+
 	mutex_lock(&mfd->dma->ov_mutex);
 
 	mdp4_overlay_mdp_perf_upd(mfd, 1);
 
-	switch (mfd->panel.type) {
-	case MIPI_CMD_PANEL:
-		mdp4_dsi_cmd_pipe_commit(0, 1);
-		break;
-	case MIPI_VIDEO_PANEL:
-		mdp4_dsi_video_pipe_commit(0, 1);
-		break;
-	case LCDC_PANEL:
-		mdp4_lcdc_pipe_commit(0, 1);
-		break;
-	case DTV_PANEL:
-		mdp4_dtv_pipe_commit(0, 1);
-		break;
-	case WRITEBACK_PANEL:
-		mdp4_wfd_pipe_commit(mfd, 0, 1);
-		break;
-	default:
-		pr_err("Panel Not Supported for Commit");
-		ret = -EINVAL;
-		break;
+	if (mixer == MDP4_MIXER0) {
+		if (ctrl->panel_mode & MDP4_PANEL_DSI_CMD) {
+			/* cndx = 0 */
+			mdp4_dsi_cmd_pipe_commit(0, 1);
+		} else if (ctrl->panel_mode & MDP4_PANEL_DSI_VIDEO) {
+			/* cndx = 0 */
+			mdp4_dsi_video_pipe_commit(0, 1);
+		} else if (ctrl->panel_mode & MDP4_PANEL_LCDC) {
+			/* cndx = 0 */
+			mdp4_lcdc_pipe_commit(0, 1);
+		}
+	} else if (mixer == MDP4_MIXER1) {
+		if (ctrl->panel_mode & MDP4_PANEL_DTV)
+			mdp4_dtv_pipe_commit(0, 1);
 	}
 
 	mdp4_overlay_mdp_perf_upd(mfd, 0);
 
 	mutex_unlock(&mfd->dma->ov_mutex);
 
-	return ret;
+	return 0;
 }
 
 struct msm_iommu_ctx {
