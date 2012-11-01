@@ -328,11 +328,6 @@ static int kgsl_page_alloc_vmfault(struct kgsl_memdesc *memdesc,
 	if (page == NULL)
 		return VM_FAULT_SIGBUS;
 
-	if (!memdesc->faulted[i]) {
-		memdesc->faulted[i] = 1;
-		__inc_zone_page_state(page, NR_FILE_PAGES);
-	}
-
 	get_page(page);
 
 	vmf->page = page;
@@ -361,15 +356,8 @@ static void kgsl_page_alloc_free(struct kgsl_memdesc *memdesc)
 		kgsl_driver.stats.vmalloc -= memdesc->size;
 	}
 	if (memdesc->sg)
-		for_each_sg(memdesc->sg, sg, sglen, i) {
-			struct page *page = sg_page(sg);
-			if (memdesc->faulted[i] == 1) {
-				memdesc->faulted[i] = 0;
-				__dec_zone_page_state(page, NR_FILE_PAGES);
-			}
-
-			__free_page(page);
-		}
+		for_each_sg(memdesc->sg, sg, sglen, i)
+			__free_page(sg_page(sg));
 }
 
 static int kgsl_contiguous_vmflags(struct kgsl_memdesc *memdesc)
@@ -523,6 +511,7 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 	pgprot_t page_prot = pgprot_writecombine(PAGE_KERNEL);
 	void *ptr;
 
+
 	/*
 	 * Add guard page to the end of the allocation when the
 	 * IOMMU is in use.
@@ -535,15 +524,6 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 	memdesc->pagetable = pagetable;
 	memdesc->priv = KGSL_MEMFLAGS_CACHED;
 	memdesc->ops = &kgsl_page_alloc_ops;
-
-	memdesc->faulted = kmalloc(sglen*sizeof(int), GFP_KERNEL);
-
-	if (memdesc->faulted == NULL) {
-		ret = -ENOMEM;
-		goto done;
-	}
-
-	memset(memdesc->faulted, 0, sglen*sizeof(int));
 
 	memdesc->sg = kgsl_sg_alloc(sglen);
 
@@ -585,8 +565,8 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 		pages[i] = alloc_page(GFP_KERNEL | __GFP_HIGHMEM);
 		if (pages[i] == NULL) {
 			ret = -ENOMEM;
-			memdesc->sglen = i;
-			goto done;
+          		memdesc->sglen = i;
+                   goto done;
 		}
 
 		sg_set_page(&memdesc->sg[i], pages[i], PAGE_SIZE, 0);
@@ -761,7 +741,6 @@ void kgsl_sharedmem_free(struct kgsl_memdesc *memdesc)
 		memdesc->ops->free(memdesc);
 
 	kgsl_sg_free(memdesc->sg, memdesc->sglen);
-	kfree(memdesc->faulted);
 
 	memset(memdesc, 0, sizeof(*memdesc));
 }
