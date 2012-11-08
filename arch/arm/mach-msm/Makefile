@@ -49,7 +49,11 @@ else
 endif
 obj-$(CONFIG_HOTPLUG_CPU) += hotplug.o
 
+<<<<<<< HEAD
 obj-$(CONFIG_MSM_AVS_HW) += avs.o
+=======
+obj-$(CONFIG_MSM_AVS_HW) += avs_hw.o
+>>>>>>> 994733e... msm: avs: Remove vestigial software based AVS
 obj-$(CONFIG_CPU_V6) += idle-v6.o
 obj-$(CONFIG_CPU_V7) += idle-v7.o
 obj-$(CONFIG_MSM_JTAG) += jtag.o
