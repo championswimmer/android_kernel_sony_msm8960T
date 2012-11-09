@@ -32,15 +32,7 @@ static inline void avs_disable(int cpu) {}
 static inline void avs_enable(int cpu, u32 avsdscr) {}
 #endif
 
-<<<<<<< HEAD
 #define AVS_DISABLE(cpu) avs_disable(cpu)
 #define AVS_ENABLE(cpu, x) avs_enable(cpu, x)
-=======
-#define AVS_DISABLE(cpu) do {			\
-		if (get_cpu() == (cpu))		\
-			avs_disable();		\
-		put_cpu();			\
-	} while (0);
->>>>>>> 994733e... msm: avs: Remove vestigial software based AVS
 
 #endif
