@@ -79,9 +79,6 @@
 #define MSM_UART6DM_PHYS	(MSM_GSBI6_PHYS + 0x40000)
 #define MSM_UART8DM_PHYS	(MSM_GSBI8_PHYS + 0x40000)
 #define MSM_UART9DM_PHYS	(MSM_GSBI9_PHYS + 0x40000)
-#ifdef CONFIG_SONY_QSCFLASHING_UART4
-#define MSM_UART11DM_PHYS	(MSM_GSBI11_PHYS + 0x10000)
-#endif
 
 /* GSBI QUP devices */
 #define MSM_GSBI1_QUP_PHYS	(MSM_GSBI1_PHYS + 0x80000)
@@ -347,35 +344,6 @@ struct platform_device msm_device_uart_dm8 = {
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
 	},
 };
-
-#ifdef CONFIG_SONY_QSCFLASHING_UART4
-static struct resource resources_uart_gsbi11[] = {
-	{
-		.start	= GSBI11_UARTDM_IRQ,
-		.end	= GSBI11_UARTDM_IRQ,
-		.flags	= IORESOURCE_IRQ,
-	},
-	{
-		.start	= MSM_UART11DM_PHYS,
-		.end	= MSM_UART11DM_PHYS + PAGE_SIZE - 1,
-		.name	= "uartdm_resource",
-		.flags	= IORESOURCE_MEM,
-	},
-	{
-		.start	= MSM_GSBI11_PHYS,
-		.end	= MSM_GSBI11_PHYS + PAGE_SIZE - 1,
-		.name	= "gsbi_resource",
-		.flags	= IORESOURCE_MEM,
-	},
-};
-
-struct platform_device msm8960_device_uart_gsbi11 = {
-	.name	= "msm_serial_hsl",
-	.id	= 2,
-	.num_resources	= ARRAY_SIZE(resources_uart_gsbi11),
-	.resource	= resources_uart_gsbi11,
-};
-#endif
 
 /*
  * GSBI 9 used into UARTDM Mode
@@ -2467,17 +2435,6 @@ static struct fs_driver_data gfx3d_fs_data = {
 	.bus_port0 = MSM_BUS_MASTER_GRAPHICS_3D,
 };
 
-static struct fs_driver_data gfx3d_fs_data_8960ab = {
-	.clks = (struct fs_clk_data[]){
-		{ .name = "core_clk", .reset_rate = 27000000 },
-		{ .name = "iface_clk" },
-		{ .name = "bus_clk" },
-		{ 0 }
-	},
-	.bus_port0 = MSM_BUS_MASTER_GRAPHICS_3D,
-	.bus_port1 = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
-};
-
 static struct fs_driver_data ijpeg_fs_data = {
 	.clks = (struct fs_clk_data[]){
 		{ .name = "core_clk" },
@@ -2576,7 +2533,7 @@ struct platform_device *msm8960ab_footswitch[] __initdata = {
 	FS_8X60(FS_IJPEG,  "vdd",	"msm_gemini.0",	&ijpeg_fs_data),
 	FS_8X60(FS_VFE,    "vdd",	"msm_vfe.0",	&vfe_fs_data),
 	FS_8X60(FS_VPE,    "vdd",	"msm_vpe.0",	&vpe_fs_data),
-	FS_8X60(FS_GFX3D,  "vdd",	"kgsl-3d0.0",	&gfx3d_fs_data_8960ab),
+	FS_8X60(FS_GFX3D,  "vdd",	"kgsl-3d0.0",	&gfx3d_fs_data),
 	FS_8X60(FS_VED,    "vdd",	"msm_vidc.0",	&ved_fs_data_8960ab),
 };
 unsigned msm8960ab_num_footswitch __initdata = ARRAY_SIZE(msm8960ab_footswitch);
