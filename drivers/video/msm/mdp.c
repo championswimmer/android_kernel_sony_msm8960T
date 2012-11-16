@@ -2522,6 +2522,10 @@ static int mdp_probe(struct platform_device *pdev)
 #if defined(CONFIG_FB_MSM_MIPI_DSI) && defined(CONFIG_FB_MSM_MDP40)
 	struct mipi_panel_info *mipi;
 #endif
+<<<<<<< HEAD
+=======
+
+>>>>>>> 08eb5e7... video: msm: Remove adjustment to MDP revision
 	if ((pdev->id == 0) && (pdev->num_resources > 0)) {
 		mdp_init_pdev = pdev;
 		mdp_pdata = pdev->dev.platform_data;
@@ -2542,6 +2546,10 @@ static int mdp_probe(struct platform_device *pdev)
 		}
 
 		mdp_rev = mdp_pdata->mdp_rev;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 08eb5e7... video: msm: Remove adjustment to MDP revision
 		mdp_iommu_split_domain = mdp_pdata->mdp_iommu_split_domain;
 
 		rc = mdp_irq_clk_setup(pdev, mdp_pdata->cont_splash_enabled);
