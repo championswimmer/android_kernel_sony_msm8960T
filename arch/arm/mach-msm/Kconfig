@@ -176,6 +176,7 @@ config ARCH_MSM8960
 	select MSM_RUN_QUEUE_STATS
 	select ARM_HAS_SG_CHAIN
 	select MSM_KRAIT_WFE_FIXUP
+<<<<<<< HEAD
 	select MSM_IOMMU_GPU_SYNC
 	select MSM_CPU_PWRCTL
 	select HAVE_NMI_WATCHDOG if MSM_WATCHDOG || MSM_WATCHDOG_V2
@@ -183,6 +184,9 @@ config ARCH_MSM8960
 	select USE_USER_ACCESSIBLE_TIMERS
 	select ARM_USE_USER_ACCESSIBLE_TIMERS
 	select MSM_USE_USER_ACCESSIBLE_TIMERS
+=======
+	select MSM_CPU_PWRCTL
+>>>>>>> 49bfbad... msm: Ensure droop detectors do not affect krait PLLs
 
 config ARCH_MSM8930
 	bool "MSM8930"
@@ -215,12 +219,16 @@ config ARCH_MSM8930
 	select HOLES_IN_ZONE if SPARSEMEM
 	select ARM_HAS_SG_CHAIN
 	select MSM_KRAIT_WFE_FIXUP
+<<<<<<< HEAD
 	select MSM_IOMMU_GPU_SYNC
 	select MSM_CPU_PWRCTL
 	select GENERIC_TIME_VSYSCALL
 	select USE_USER_ACCESSIBLE_TIMERS
 	select ARM_USE_USER_ACCESSIBLE_TIMERS
 	select MSM_USE_USER_ACCESSIBLE_TIMERS
+=======
+	select MSM_CPU_PWRCTL
+>>>>>>> 49bfbad... msm: Ensure droop detectors do not affect krait PLLs
 
 config ARCH_APQ8064
 	bool "APQ8064"
@@ -248,6 +256,7 @@ config ARCH_APQ8064
 	select ARCH_SUPPORTS_MSI
 	select ARM_HAS_SG_CHAIN
 	select MSM_KRAIT_WFE_FIXUP
+<<<<<<< HEAD
 	select MSM_IOMMU_GPU_SYNC
 	select MSM_CPU_PWRCTL
 	select HAVE_NMI_WATCHDOG if MSM_WATCHDOG || MSM_WATCHDOG_V2
@@ -255,6 +264,9 @@ config ARCH_APQ8064
 	select USE_USER_ACCESSIBLE_TIMERS
 	select ARM_USE_USER_ACCESSIBLE_TIMERS
 	select MSM_USE_USER_ACCESSIBLE_TIMERS
+=======
+	select MSM_CPU_PWRCTL
+>>>>>>> 49bfbad... msm: Ensure droop detectors do not affect krait PLLs
 
 config ARCH_MSM8974
 	bool "MSM8974"
@@ -2637,6 +2649,7 @@ config MSM_CPU_PWRCTL
 	  stand alone power collapse operation. Selecting this option
 	  ensures that they are always off.
 
+<<<<<<< HEAD
 config SONY_SSM
 	bool "Support Super Stamina Mode"
 	default n
@@ -2656,4 +2669,6 @@ config MSM_USE_USER_ACCESSIBLE_TIMERS
 	  Enables MSM-specific user accessible timers via a shared
 	  memory page containing the cycle counter.
 
+=======
+>>>>>>> 49bfbad... msm: Ensure droop detectors do not affect krait PLLs
 endif
