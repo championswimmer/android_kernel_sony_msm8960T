@@ -1,5 +1,4 @@
-/* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
- * Copyright (C) 2012-2013 Sony Mobile Communications AB.
+/* Copyright (c) 2008-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -182,10 +181,6 @@ struct msm_panel_info {
 	struct lcdc_panel_info lcdc;
 	struct mipi_panel_info mipi;
 	struct lvds_panel_info lvds;
-
-	/* physical size in mm */
-	__u32 width;
-	__u32 height;
 };
 
 #define MSM_FB_SINGLE_MODE_PANEL(pinfo)		\
@@ -203,14 +198,10 @@ struct msm_fb_panel_data {
 
 	/* function entry chain */
 	int (*on) (struct platform_device *pdev);
-	int (*controller_on_panel_on) (struct platform_device *pdev);
 	int (*off) (struct platform_device *pdev);
 	int (*power_ctrl) (boolean enable);
 	struct platform_device *next;
 	int (*clk_func) (int enable);
-	struct msm_panel_info *(*panel_detect) (struct msm_fb_data_type *mfd);
-	int power_on_panel_at_pan;
-	int (*update_panel) (struct platform_device *pdev);
 };
 
 /*===========================================================================
